@@ -1,4 +1,4 @@
-import math
+﻿import math
 import os
 import pickle
 import random
@@ -29,6 +29,7 @@ from torch import autograd
 from pytorch_pretrained_bert import BertModel, BertConfig
 import torch.nn as nn
 import torch.nn.functional as F
+import gc
 
 def get_opt(param_optimizer, num_train_optimization_steps, args):
     """
@@ -85,7 +86,7 @@ class BaseTrainer(object):
         
         # sample loglikelihoods from the dataset.
         loglikelihoods = []
-        for i, batch in enumerate(data_loader, start=1):
+        for i, batch in tqbm(enumerate(data_loader, start=1)):
             input_ids, input_mask, seg_ids, start_positions, end_positions, _ = batch
             
             seq_len = torch.sum(torch.sign(input_ids), 1).detach()
@@ -105,6 +106,7 @@ class BaseTrainer(object):
             end_positions = end_positions.cuda(self.args.gpu, non_blocking=True)
             
             model = self.bert.to('cuda')
+            model = nn.DataParallel(model)
             
             logits = self.qa_outputs(torch.stack(model(
                 input_ids,
@@ -113,7 +115,7 @@ class BaseTrainer(object):
             )[0]))
             log_prob = F.log_softmax(logits, dim=0)
             #log_prob = F.log_softmax(torch.rand(len(seq_len),1), dim=0)
-            loglikelihoods.append(log_prob)
+            loglikelihoods.append(log_prob).gc.collect()
                 
                 #F.log_softmax(self(x), dim=1)[range(batch_size), y.data]
             #)
@@ -124,7 +126,7 @@ class BaseTrainer(object):
         loglikelihood_grads = zip(*[autograd.grad(
             l, self.model.parameters(),
             retain_graph=(i < len(loglikelihoods))
-        ) for i, l in enumerate(loglikelihoods, 1)])
+        ) for i, l in tqdm(enumerate(loglikelihoods, 1))])
         loglikelihood_grads = [torch.stack(gs) for gs in loglikelihood_grads]
         fisher_diagonals = [(g ** 2).mean(0) for g in loglikelihood_grads]
         param_names = [
