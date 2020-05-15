@@ -30,7 +30,7 @@ from pytorch_pretrained_bert import BertModel, BertConfig
 import torch.nn as nn
 import torch.nn.functional as F
 import gc
-import tqdm from tqdm
+from tqdm import tqdm
 
 def get_opt(param_optimizer, num_train_optimization_steps, args):
     """
