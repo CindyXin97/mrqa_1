@@ -89,8 +89,8 @@ class BaseTrainer(object):
         for i, batch in tqbm(enumerate(data_loader, start=1)):
             input_ids, input_mask, seg_ids, start_positions, end_positions, _ = batch
             
-            seq_len = torch.sum(torch.sign(input_ids), 1).detach()
-            max_len = torch.max(seq_len).detach()
+            seq_len = torch.sum(torch.sign(input_ids), 1)
+            max_len = torch.max(seq_len)
             
             
            #if self.args.use_cuda:
