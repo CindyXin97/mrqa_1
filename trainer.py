@@ -87,7 +87,7 @@ class BaseTrainer(object):
         
         # sample loglikelihoods from the dataset.
         loglikelihoods = []
-        for i, batch in tqbm(enumerate(data_loader, start=1)):
+        for i, batch in tqdm(enumerate(data_loader, start=1)):
             input_ids, input_mask, seg_ids, start_positions, end_positions, _ = batch
             
             seq_len = torch.sum(torch.sign(input_ids), 1)
